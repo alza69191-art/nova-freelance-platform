@@ -63,6 +63,57 @@ function contentText(value) {
   return "";
 }
 
+async function readProviderJson(response) {
+  const raw = await response.text();
+  let data = null;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    // Keep the diagnostic limited to the HTTP response, never return raw provider content.
+  }
+
+  if (!response.ok) {
+    const details = data?.error || {};
+    const rawCode = details.code || details.status || details.type || `HTTP_${response.status}`;
+    const code = String(rawCode).replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 64) || `HTTP_${response.status}`;
+    const error = new Error("AI provider returned an unsuccessful response");
+    error.status = response.status;
+    error.code = code;
+    throw error;
+  }
+
+  if (!data || typeof data !== "object") {
+    const error = new Error("AI provider returned invalid JSON");
+    error.status = response.status;
+    error.code = "INVALID_JSON";
+    throw error;
+  }
+  return data;
+}
+
+function providerFailure(error) {
+  if (Number.isInteger(error?.status)) {
+    return { status: error.status, code: error.code || `HTTP_${error.status}` };
+  }
+  return {
+    status: null,
+    code: error?.name === "TimeoutError" || error?.name === "AbortError" ? "TIMEOUT" : "NETWORK",
+  };
+}
+
+function providerFailureText(failure) {
+  if (failure.status === 401) return "مفتاح API غير صحيح أو منتهي";
+  if (failure.status === 402) return "الرصيد أو الفوترة غير مفعّلة";
+  if (failure.status === 403) return "المفتاح لا يملك صلاحية استخدام الخدمة";
+  if (failure.status === 404) return "النموذج أو نقطة الاتصال غير موجودة";
+  if (failure.status === 400) return "الطلب أو إعدادات النموذج غير مقبولة";
+  if (failure.status === 429) return "تم تجاوز حد الاستخدام أو الحصة";
+  if (failure.status >= 500) return "المزوّد يواجه عطلاً مؤقتاً";
+  if (failure.code === "TIMEOUT") return "انتهت مهلة الاتصال";
+  if (failure.code === "NETWORK") return "تعذّر الوصول إلى خادم المزوّد";
+  return `فشل الاتصال (${failure.code})`;
+}
+
 async function askOpenAICompatible(provider, messages) {
   const response = await fetch(provider.baseUrl + "/chat/completions", {
     method: "POST",
@@ -79,8 +130,7 @@ async function askOpenAICompatible(provider, messages) {
     }),
     signal: AbortSignal.timeout(25000),
   });
-  if (!response.ok) throw new Error("Provider request failed");
-  const data = await response.json();
+  const data = await readProviderJson(response);
   const reply = contentText(data.choices?.[0]?.message?.content);
   if (!reply) throw new Error("Provider returned no text");
   return reply;
@@ -101,8 +151,7 @@ async function askGemini(provider, messages) {
     }),
     signal: AbortSignal.timeout(25000),
   });
-  if (!response.ok) throw new Error("Gemini request failed");
-  const data = await response.json();
+  const data = await readProviderJson(response);
   const reply = contentText(data.candidates?.[0]?.content?.parts || []);
   if (!reply) throw new Error("Gemini returned no text");
   return reply;
@@ -143,17 +192,46 @@ export async function POST(request) {
       return NextResponse.json({ error: "لم يتم العثور على إعداد مزوّد ذكاء اصطناعي متوافق في Render." }, { status: 503 });
     }
 
+    const failures = [];
     for (const provider of providers) {
       try {
         const reply = provider.name === "gemini"
           ? await askGemini(provider, messages)
           : await askOpenAICompatible(provider, messages);
         return NextResponse.json({ reply });
-      } catch {
+      } catch (error) {
+        const failure = providerFailure(error);
+        failures.push({ name: provider.name, model: provider.model || null, ...failure });
+        console.error("NOVA_AI_PROVIDER_FAILURE", JSON.stringify({
+          provider: provider.name,
+          model: provider.model || null,
+          status: failure.status,
+          code: failure.code,
+        }));
         // Try the next configured provider without exposing provider errors or secrets.
       }
     }
-    return NextResponse.json({ error: "تعذر الاتصال بمزوّدي الذكاء الاصطناعي حالياً. تحقق من إعدادات Render وحدود الاستخدام." }, { status: 502 });
+
+    const labels = {
+      huggingface: "Hugging Face",
+      gemini: "Gemini",
+      groq: "Groq",
+      openai: "OpenAI",
+      openrouter: "OpenRouter",
+      deepseek: "DeepSeek",
+      mistral: "Mistral",
+      cerebras: "Cerebras",
+      together: "Together",
+      nvidia: "NVIDIA",
+      custom: "المزوّد المخصص",
+      generic: "المزوّد العام",
+    };
+    const details = failures.map((failure) =>
+      `${labels[failure.name] || failure.name}: ${providerFailureText(failure)}`
+    ).join("؛ ");
+    return NextResponse.json({
+      error: `تعذّر تشغيل المساعد. التشخيص: ${details || "لم يستجب أي مزوّد"}.`,
+    }, { status: 502 });
   } catch {
     return NextResponse.json({ error: "حدث خطأ أثناء معالجة الرسالة." }, { status: 500 });
   }
