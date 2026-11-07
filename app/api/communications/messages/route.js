@@ -7,7 +7,6 @@ export const dynamic = "force-dynamic";
 const MAX_REQUEST_BYTES = 22 * 1024 * 1024;
 const MAX_TOTAL_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 14 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const USER_QUOTA_BYTES = 100 * 1024 * 1024;
 const GLOBAL_CHAT_QUOTA_BYTES = 250 * 1024 * 1024;
@@ -41,10 +40,6 @@ async function inspectFile(file) {
     if (signature === "GIF87a" || signature === "GIF89a") mime = "image/gif";
   } else if (ext === "webp") {
     if (data.subarray(0, 4).toString("ascii") === "RIFF" && data.subarray(8, 12).toString("ascii") === "WEBP") mime = "image/webp";
-  } else if (["mp4", "m4v", "mov"].includes(ext)) {
-    if (data.subarray(4, 8).toString("ascii") === "ftyp") mime = ext === "mov" ? "video/quicktime" : "video/mp4";
-  } else if (ext === "webm") {
-    if (data.subarray(0, 4).equals(Buffer.from([0x1a,0x45,0xdf,0xa3]))) mime = "video/webm";
   } else if (ext === "pdf") {
     if (data.subarray(0, 5).toString("ascii") === "%PDF-") mime = "application/pdf";
   } else if (["docx", "xlsx", "pptx"].includes(ext)) {
@@ -66,10 +61,9 @@ async function inspectFile(file) {
 
   if (!mime) throw new Error("نوع الملف غير مدعوم أو أن محتواه لا يطابق امتداده.");
   const isImage = mime.startsWith("image/");
-  const isVideo = mime.startsWith("video/");
-  const maxBytes = isImage ? MAX_IMAGE_BYTES : isVideo ? MAX_VIDEO_BYTES : MAX_DOCUMENT_BYTES;
+  const maxBytes = isImage ? MAX_IMAGE_BYTES : MAX_DOCUMENT_BYTES;
   if (!data.length || data.length > maxBytes) {
-    throw new Error(isImage ? "حجم الصورة يتجاوز 8 ميغابايت." : isVideo ? "حجم الفيديو يتجاوز 14 ميغابايت." : "حجم الملف يتجاوز 8 ميغابايت.");
+    throw new Error(isImage ? "حجم الصورة يتجاوز 8 ميغابايت." : "حجم الملف يتجاوز 8 ميغابايت.");
   }
   return { data, mime, fileName: safeFilename(file.name) };
 }
