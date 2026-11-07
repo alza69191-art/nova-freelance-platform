@@ -207,3 +207,18 @@ create table if not exists service_order_messages (
 );
 create index if not exists idx_order_messages_order on service_order_messages(order_id, created_at);
 
+
+
+-- Verified buyer reviews are allowed only after a service order is completed.
+create table if not exists service_reviews (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null unique references service_orders(id) on delete cascade,
+  service_id uuid not null references services(id) on delete cascade,
+  buyer_id uuid not null references users(id) on delete cascade,
+  seller_id uuid not null references users(id) on delete cascade,
+  rating smallint not null check (rating between 1 and 5),
+  comment text not null check (char_length(comment) between 3 and 1000),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_service_reviews_service on service_reviews(service_id, created_at desc);
+create index if not exists idx_service_reviews_seller on service_reviews(seller_id, created_at desc);
