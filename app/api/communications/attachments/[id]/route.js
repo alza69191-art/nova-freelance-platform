@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
 
     const range = request.headers.get("range");
     if (range) {
-      const match = /^bytes=(\\d*)-(\\d*)$/.exec(range.trim());
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
       if (!match || (!match[1] && !match[2])) {
         return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
       }
