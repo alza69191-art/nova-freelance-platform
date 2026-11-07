@@ -76,3 +76,23 @@ header{position:relative}
 .service-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 18px}
 .service-gallery img{display:block;width:100%;height:150px;object-fit:cover;border-radius:8px;background:#f4f1eb}
 .service-gallery img:first-child:nth-last-child(1){grid-column:1/-1;height:210px}
+
+.freelancer-search{width:100%;height:44px;border:1px solid var(--line);border-radius:8px;padding:0 12px;margin:10px 0 18px;outline-color:var(--orange)}
+.freelancer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.freelancer-card{display:flex;gap:12px;padding:15px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.freelancer-card>i{font-style:normal;flex:0 0 42px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#f5ded1;color:#a94d25;font-size:17px}
+.freelancer-card>div{min-width:0;flex:1}
+.freelancer-card b,.freelancer-card small{display:block}
+.freelancer-card b{font-size:12px}
+.freelancer-card small{font-size:9px;color:#b87944;margin-top:4px}
+.freelancer-card p{font-size:10px;line-height:1.8;color:#748078}
+.freelancer-card .chips{margin:7px 0;gap:5px}
+.freelancer-card .chips small{background:#f5f3ef;border-radius:12px;padding:4px 7px;color:#6e7971}
+.freelancer-card button{padding:8px 11px;font-size:9px}
+.service-rating{font-size:10px;color:#b87944;margin:8px 0 12px}
+.service-reviews{border-top:1px solid var(--line);padding:12px 0;margin:10px 0}
+.service-reviews>b{font-size:11px}
+.service-reviews article{padding:9px 0;border-bottom:1px solid var(--line)}
+.service-reviews strong{font-size:9px;color:#b87944}
+.service-reviews p{font-size:10px;line-height:1.8;margin:5px 0;color:#657169}
+@media(max-width:740px){.freelancer-grid{grid-template-columns:1fr}.freelancer-card{padding:12px}}
