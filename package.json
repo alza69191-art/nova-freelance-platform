@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "start:desktop": "electron .",
-    "dist:win": "electron-builder --win nsis --x64"
+    "dist:win": "electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {
     "next": "^15.5.0",
