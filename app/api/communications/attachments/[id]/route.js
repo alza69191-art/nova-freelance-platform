@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
 
     const data = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data);
     const size = data.length;
-    const inline = file.mime_type.startsWith("image/") || file.mime_type.startsWith("video/");
+    const inline = file.mime_type.startsWith("image/");
     const disposition = inline ? "inline" : "attachment";
     const encodedName = encodeURIComponent(file.file_name).replace(/[!'()*]/g, (char) => "%" + char.charCodeAt(0).toString(16).toUpperCase());
     const headers = {
