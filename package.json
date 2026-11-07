@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "start:desktop": "electron .",
-    "dist:win": "electron-builder --win nsis --x64 --publish never"
+    "lint": "eslint ."
   },
   "dependencies": {
     "next": "^15.5.0",
@@ -18,37 +16,6 @@
   },
   "devDependencies": {
     "eslint": "^9.0.0",
-    "eslint-config-next": "^15.5.0",
-    "electron": "^37.2.6",
-    "electron-builder": "^26.0.12"
-  },
-  "main": "electron/main.cjs",
-  "build": {
-    "appId": "com.nova.freelance.desktop",
-    "productName": "NOVA",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
+    "eslint-config-next": "^15.5.0"
   }
 }
