@@ -1,7 +1,6 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
 const cats=["الكل","تصميم وهوية","برمجة وتطوير","كتابة وترجمة","تسويق رقمي","فيديو وصوت","أعمال وبيانات"];
-const items=[];
 export default function Home(){
 const [tab,T]=useState("الرئيسية"),[cat,C]=useState("الكل"),[q,Q]=useState(""),[items,SI]=useState([]),[servicesLoading,SL]=useState(true),[servicesError,SE]=useState(""),[user,U]=useState(null),[email,E]=useState(""),[password,P]=useState(""),[displayName,D]=useState(""),[mode,MODE]=useState("login"),[modal,M]=useState(false),[busy,B]=useState(false),[msg,G]=useState(""),[mobile,H]=useState(false);
 useEffect(()=>{fetch("/api/auth/me").then(r=>r.json()).then(d=>U(d.user||null)).catch(()=>U(null))},[]);
