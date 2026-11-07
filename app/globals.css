@@ -60,3 +60,15 @@
 .chat-attachments img{width:auto;max-width:100%;height:auto}
 @media(max-width:1050px){.management-grid{grid-template-columns:1fr}.support-layout{grid-template-columns:1fr}}
 @media(max-width:740px){.order-row{flex-direction:column}.order-actions{max-width:none}.support-layout{grid-template-columns:1fr}.manage-row>img{width:70px;height:64px}}
+
+header{position:relative}
+.header-actions{display:flex;align-items:center;gap:8px;position:relative}
+.bell{position:relative}
+.bell i{position:absolute;top:-4px;right:-6px;min-width:16px;height:16px;padding:0 4px;border-radius:12px;background:#d95f2e;color:white;font:700 9px Manrope;display:grid;place-items:center}
+.notification-panel{position:absolute;z-index:60;top:48px;left:0;width:min(340px,calc(100vw - 35px));max-height:420px;overflow:auto;background:white;border:1px solid var(--line);border-radius:11px;box-shadow:0 15px 40px #17241f22;padding:13px}
+.notification-panel>b{font-size:12px;display:block;padding:5px 4px 10px}
+.notification-panel article{padding:10px 4px;border-top:1px solid var(--line)}
+.notification-panel article strong{display:block;font-size:10px}
+.notification-panel article p{font-size:10px;color:#68746d;line-height:1.6;margin:4px 0}
+.notification-panel time{font-size:8px;color:var(--muted)}
+.notification-panel>p{font-size:10px;color:var(--muted);padding:10px 4px}
