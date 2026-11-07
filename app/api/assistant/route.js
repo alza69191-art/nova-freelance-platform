@@ -20,13 +20,19 @@ const OPENAI_COMPATIBLE = [
   ["generic", "AI_API_KEY", "AI_MODEL", "AI_BASE_URL", "", ""],
 ];
 
+function normalizeBaseUrl(value) {
+  let url = value;
+  while (url.endsWith("/")) url = url.slice(0, -1);
+  return url;
+}
+
 function configuredProviders() {
   const providers = [];
   for (const [name, keyName, modelName, urlName, defaultUrl, defaultModel] of OPENAI_COMPATIBLE) {
     const key = process.env[keyName];
     const baseUrl = process.env[urlName] || defaultUrl;
     const model = process.env[modelName] || defaultModel;
-    if (key && baseUrl && model) providers.push({ name, key, baseUrl: baseUrl.replace(/\\/+$/, ""), model });
+    if (key && baseUrl && model) providers.push({ name, key, baseUrl: normalizeBaseUrl(baseUrl), model });
   }
 
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
@@ -39,7 +45,7 @@ function configuredProviders() {
   }
 
   const preferred = (process.env.AI_PROVIDER_ORDER || process.env.AI_PRIMARY_PROVIDER || "")
-    .toLowerCase().split(/[\\s,;]+/).filter(Boolean);
+    .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
   if (preferred.length) {
     providers.sort((a, b) => {
       const ai = preferred.indexOf(a.name);
@@ -52,7 +58,7 @@ function configuredProviders() {
 
 function contentText(value) {
   if (typeof value === "string") return value.trim();
-  if (Array.isArray(value)) return value.map((part) => typeof part === "string" ? part : part?.text || "").join("\\n").trim();
+  if (Array.isArray(value)) return value.map((part) => typeof part === "string" ? part : part?.text || "").join(" ").trim();
   return "";
 }
 
@@ -67,7 +73,7 @@ async function askOpenAICompatible(provider, messages) {
       model: provider.model,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       temperature: 0.5,
-      max_tokens: 900,
+      max_completion_tokens: 900,
       stream: false,
     }),
     signal: AbortSignal.timeout(25000),
