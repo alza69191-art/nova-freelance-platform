@@ -8,9 +8,9 @@ import android.os.Bundle
 import android.os.Environment
 import android.webkit.*
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import android.app.Activity
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
     private lateinit var webView: WebView
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private val filePickerRequest = 4102
