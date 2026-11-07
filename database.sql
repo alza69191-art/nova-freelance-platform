@@ -159,3 +159,51 @@ create index if not exists idx_chat_attachments_message
 create index if not exists idx_chat_attachments_uploader
   on chat_attachments(uploaded_by);
 
+
+
+-- Service marketplace: package tiers, optional extras, and listing gallery.
+alter table services add column if not exists packages jsonb not null default '[]'::jsonb;
+alter table services add column if not exists extras jsonb not null default '[]'::jsonb;
+alter table services add column if not exists published_at timestamptz;
+
+create table if not exists service_media (
+  id uuid primary key default gen_random_uuid(),
+  service_id uuid not null references services(id) on delete cascade,
+  uploaded_by uuid not null references users(id) on delete cascade,
+  file_name text not null,
+  mime_type text not null check (mime_type in ('image/jpeg','image/png','image/gif','image/webp')),
+  size_bytes integer not null check (size_bytes > 0 and size_bytes <= 3145728),
+  data bytea not null,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_service_media_listing on service_media(service_id, sort_order, created_at);
+
+-- Service order requests and delivery workflow. Payment is deliberately separate.
+create table if not exists service_orders (
+  id uuid primary key default gen_random_uuid(),
+  service_id uuid not null references services(id) on delete restrict,
+  buyer_id uuid not null references users(id) on delete restrict,
+  seller_id uuid not null references users(id) on delete restrict,
+  package_name text not null,
+  package_price numeric(12,2) not null check (package_price >= 0),
+  package_description text not null default '',
+  requirements text not null check (char_length(requirements) between 10 and 5000),
+  status text not null default 'requested'
+    check (status in ('requested','accepted','in_progress','delivered','revision_requested','completed','cancelled')),
+  due_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_service_orders_buyer on service_orders(buyer_id, created_at desc);
+create index if not exists idx_service_orders_seller on service_orders(seller_id, created_at desc);
+
+create table if not exists service_order_messages (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references service_orders(id) on delete cascade,
+  sender_id uuid not null references users(id) on delete cascade,
+  message text not null check (char_length(message) between 1 and 5000),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_order_messages_order on service_order_messages(order_id, created_at);
+
