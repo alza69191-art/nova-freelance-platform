@@ -25,7 +25,7 @@ export async function POST(request) {
        select ticket.* from ticket join first_message on first_message.ticket_id=ticket.id`,
       [user.id,subject,message]
     );
-    return NextResponse.json({ ticket: result.rows[0] }, { status: 201 });
+    return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {
     console.error("Support ticket creation failed:", error.message);
     return NextResponse.json({ error: "تعذر إرسال رسالة الدعم." }, { status: 500 });
