@@ -3,7 +3,7 @@ services:
     name: nova-freelance-platform
     runtime: node
     plan: free
-    region: frankfurt
+    region: oregon
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -24,4 +24,4 @@ databases:
     databaseName: nova
     user: nova_user
     plan: free
-    region: frankfurt
+    region: oregon
