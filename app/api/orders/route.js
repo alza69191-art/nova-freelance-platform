@@ -11,6 +11,7 @@ export async function GET() {
     const result=await query(
       `select o.id,o.service_id,o.buyer_id,o.seller_id,o.package_name,o.package_price,
               o.package_description,o.requirements,o.status,o.due_at,o.created_at,o.updated_at,
+              exists(select 1 from service_reviews r where r.order_id=o.id) as reviewed,
               s.title as service_title,
               coalesce(bp.display_name,b.email) as buyer_name,
               coalesce(sp.display_name,su.email) as seller_name
