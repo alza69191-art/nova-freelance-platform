@@ -72,3 +72,7 @@ header{position:relative}
 .notification-panel article p{font-size:10px;color:#68746d;line-height:1.6;margin:4px 0}
 .notification-panel time{font-size:8px;color:var(--muted)}
 .notification-panel>p{font-size:10px;color:var(--muted);padding:10px 4px}
+
+.service-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 18px}
+.service-gallery img{display:block;width:100%;height:150px;object-fit:cover;border-radius:8px;background:#f4f1eb}
+.service-gallery img:first-child:nth-last-child(1){grid-column:1/-1;height:210px}
