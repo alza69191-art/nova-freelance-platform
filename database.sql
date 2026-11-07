@@ -1,0 +1,23 @@
+-- Execute in Supabase SQL Editor
+create extension if not exists pgcrypto;
+create table if not exists public.profiles(id uuid primary key references auth.users(id) on delete cascade,display_name text,avatar_url text,bio text,created_at timestamptz default now());
+create table if not exists public.services(id uuid primary key default gen_random_uuid(),seller_id uuid not null references public.profiles(id),title text not null check(char_length(title) between 5 and 120),description text not null,category text not null,price numeric(12,2) not null check(price>=0),status text not null default 'draft' check(status in('draft','published','paused')),created_at timestamptz default now());
+create table if not exists public.projects(id uuid primary key default gen_random_uuid(),client_id uuid not null references public.profiles(id),title text not null,description text not null,budget_min numeric(12,2),budget_max numeric(12,2),status text not null default 'open',created_at timestamptz default now());
+create table if not exists public.support_tickets(id uuid primary key default gen_random_uuid(),user_id uuid not null references public.profiles(id),subject text not null,message text not null,status text not null default 'open',created_at timestamptz default now());
+create table if not exists public.notifications(id uuid primary key default gen_random_uuid(),user_id uuid not null references public.profiles(id),title text not null,body text not null,read_at timestamptz,created_at timestamptz default now());
+alter table public.profiles enable row level security; alter table public.services enable row level security; alter table public.projects enable row level security; alter table public.support_tickets enable row level security; alter table public.notifications enable row level security;
+drop policy if exists "profiles public read" on public.profiles; create policy "profiles public read" on public.profiles for select using(true);
+drop policy if exists "profile own insert" on public.profiles; create policy "profile own insert" on public.profiles for insert to authenticated with check(auth.uid()=id);
+drop policy if exists "profile own update" on public.profiles; create policy "profile own update" on public.profiles for update to authenticated using(auth.uid()=id) with check(auth.uid()=id);
+drop policy if exists "service read" on public.services; create policy "service read" on public.services for select using(status='published' or seller_id=auth.uid());
+drop policy if exists "service own manage" on public.services; create policy "service own manage" on public.services for all to authenticated using(seller_id=auth.uid()) with check(seller_id=auth.uid());
+drop policy if exists "project signed read" on public.projects; create policy "project signed read" on public.projects for select to authenticated using(true);
+drop policy if exists "project owner manage" on public.projects; create policy "project owner manage" on public.projects for all to authenticated using(client_id=auth.uid()) with check(client_id=auth.uid());
+drop policy if exists "ticket own read" on public.support_tickets; create policy "ticket own read" on public.support_tickets for select to authenticated using(user_id=auth.uid());
+drop policy if exists "ticket own create" on public.support_tickets; create policy "ticket own create" on public.support_tickets for insert to authenticated with check(user_id=auth.uid());
+drop policy if exists "notification own read" on public.notifications; create policy "notification own read" on public.notifications for select to authenticated using(user_id=auth.uid());
+drop policy if exists "notification own update" on public.notifications; create policy "notification own update" on public.notifications for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+insert into storage.buckets(id,name,public,file_size_limit) values('nova-files','nova-files',false,26214400) on conflict(id) do update set public=false,file_size_limit=26214400;
+drop policy if exists "nova file read" on storage.objects; create policy "nova file read" on storage.objects for select to authenticated using(bucket_id='nova-files' and (storage.foldername(name))[1]=auth.uid()::text);
+drop policy if exists "nova file upload" on storage.objects; create policy "nova file upload" on storage.objects for insert to authenticated with check(bucket_id='nova-files' and (storage.foldername(name))[1]=auth.uid()::text);
+drop policy if exists "nova file delete" on storage.objects; create policy "nova file delete" on storage.objects for delete to authenticated using(bucket_id='nova-files' and (storage.foldername(name))[1]=auth.uid()::text);
