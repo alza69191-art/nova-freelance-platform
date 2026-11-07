@@ -10,6 +10,7 @@ const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 14 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const USER_QUOTA_BYTES = 100 * 1024 * 1024;
+const GLOBAL_CHAT_QUOTA_BYTES = 250 * 1024 * 1024;
 const PUBLIC_CONVERSATION_ID = "00000000-0000-4000-8000-000000000001";
 const sendTimes = new Map();
 
@@ -132,11 +133,16 @@ export async function POST(request) {
 
     if (totalBytes) {
       const usage = await query(
-        "select coalesce(sum(size_bytes),0)::bigint as used from chat_attachments where uploaded_by=$1",
+        `select coalesce(sum(size_bytes),0)::bigint as total_used,
+                coalesce(sum(size_bytes) filter (where uploaded_by=$1),0)::bigint as user_used
+         from chat_attachments`,
         [user.id]
       );
-      if (Number(usage.rows[0]?.used || 0) + totalBytes > USER_QUOTA_BYTES) {
+      if (Number(usage.rows[0]?.user_used || 0) + totalBytes > USER_QUOTA_BYTES) {
         return NextResponse.json({ error: "وصلت إلى حصة الملفات الخاصة بحسابك (100 ميغابايت)." }, { status: 413 });
+      }
+      if (Number(usage.rows[0]?.total_used || 0) + totalBytes > GLOBAL_CHAT_QUOTA_BYTES) {
+        return NextResponse.json({ error: "وصلت مساحة ملفات المحادثات إلى الحد التجريبي (250 ميغابايت). تواصل مع الإدارة لزيادة السعة." }, { status: 413 });
       }
     }
 
