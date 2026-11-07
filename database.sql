@@ -108,3 +108,54 @@ create index if not exists idx_proposals_project on project_proposals(project_id
 create index if not exists idx_support_user on support_tickets(user_id, created_at desc);
 create index if not exists idx_support_messages_ticket on support_messages(ticket_id, created_at);
 create index if not exists idx_notifications_user on notifications(user_id, created_at desc);
+ 
+-- NOVA public community and private direct-message conversations.
+create table if not exists conversations (
+  id uuid primary key default gen_random_uuid(),
+  conversation_type text not null check (conversation_type in ('public','direct')),
+  title text,
+  participant_one_id uuid references users(id) on delete cascade,
+  participant_two_id uuid references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  check (
+    (conversation_type = 'public' and participant_one_id is null and participant_two_id is null)
+    or
+    (conversation_type = 'direct' and participant_one_id is not null and participant_two_id is not null and participant_one_id < participant_two_id)
+  ),
+  unique(participant_one_id, participant_two_id)
+);
+
+insert into conversations(id, conversation_type, title)
+values ('00000000-0000-4000-8000-000000000001', 'public', 'مجتمع NOVA')
+on conflict (id) do nothing;
+
+create table if not exists conversation_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references conversations(id) on delete cascade,
+  sender_id uuid not null references users(id) on delete cascade,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  check (char_length(body) <= 5000)
+);
+
+create table if not exists chat_attachments (
+  id uuid primary key default gen_random_uuid(),
+  message_id uuid not null references conversation_messages(id) on delete cascade,
+  uploaded_by uuid not null references users(id) on delete cascade,
+  file_name text not null,
+  mime_type text not null,
+  size_bytes bigint not null check (size_bytes > 0),
+  data bytea not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_conversations_direct_participants
+  on conversations(participant_one_id, participant_two_id)
+  where conversation_type = 'direct';
+create index if not exists idx_conversation_messages_recent
+  on conversation_messages(conversation_id, created_at desc);
+create index if not exists idx_chat_attachments_message
+  on chat_attachments(message_id);
+create index if not exists idx_chat_attachments_uploader
+  on chat_attachments(uploaded_by);
+
