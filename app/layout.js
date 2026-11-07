@@ -12,6 +12,9 @@ export const metadata = {
   applicationName: "NOVA",
   manifest: "/manifest.json",
   alternates: { canonical: "/" },
+  verification: {
+    google: "lZ0Zz3K7Cplr5vKpdXp-g1gPe5deSqvOt-g39D0oWaE"
+  },
   openGraph: {
     type: "website",
     url: siteUrl,
