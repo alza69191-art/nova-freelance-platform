@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const result = await query(
-      `select p.id,p.title,p.description,p.category,p.budget_min,p.budget_max,p.created_at,
+      `select p.id,p.client_id,p.title,p.description,p.category,p.budget_min,p.budget_max,p.created_at,
               pr.display_name as client_name
        from projects p left join profiles pr on pr.user_id=p.client_id
        where p.status='open' order by p.created_at desc limit 100`
