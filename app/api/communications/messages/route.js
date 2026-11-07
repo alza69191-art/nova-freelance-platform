@@ -15,7 +15,7 @@ const PUBLIC_CONVERSATION_ID = "00000000-0000-4000-8000-000000000001";
 const sendTimes = new Map();
 
 function safeFilename(name) {
-  const cleaned = String(name || "file").replace(/[\\\\/\\u0000-\\u001f\\u007f]/g, "_").trim().slice(0, 160);
+  const cleaned = String(name || "file").replaceAll("/", "_").replaceAll(String.fromCharCode(92), "_").replace(/[\x00-\x1f\x7f]/g, "_").trim().slice(0, 160);
   return cleaned || "file";
 }
 
