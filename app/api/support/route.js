@@ -81,6 +81,11 @@ export async function POST(request) {
         );
         ticket=created.rows[0];
         await client.query("insert into support_messages(ticket_id,sender_id,message) values($1,$2,$3)",[ticket.id,user.id,message]);
+        await client.query(
+          `insert into notifications(user_id,title,body)
+           select id,'تذكرة دعم جديدة',$2 from users where role='admin'`,
+          [ticket.id,`وصلت تذكرة دعم جديدة: ${subject}`]
+        );
         await client.query("commit");
       } catch(error) { await client.query("rollback"); throw error; }
       finally { client.release(); }
