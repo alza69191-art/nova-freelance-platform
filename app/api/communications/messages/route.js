@@ -131,26 +131,26 @@ export async function POST(request) {
       return NextResponse.json({ error: error.message || "تعذر التحقق من المرفقات." }, { status: 400 });
     }
 
-    if (totalBytes) {
-      const usage = await query(
-        `select coalesce(sum(size_bytes),0)::bigint as total_used,
-                coalesce(sum(size_bytes) filter (where uploaded_by=$1),0)::bigint as user_used
-         from chat_attachments`,
-        [user.id]
-      );
-      if (Number(usage.rows[0]?.user_used || 0) + totalBytes > USER_QUOTA_BYTES) {
-        return NextResponse.json({ error: "وصلت إلى حصة الملفات الخاصة بحسابك (100 ميغابايت)." }, { status: 413 });
-      }
-      if (Number(usage.rows[0]?.total_used || 0) + totalBytes > GLOBAL_CHAT_QUOTA_BYTES) {
-        return NextResponse.json({ error: "وصلت مساحة ملفات المحادثات إلى الحد التجريبي (250 ميغابايت). تواصل مع الإدارة لزيادة السعة." }, { status: 413 });
-      }
-    }
-
     await query("select 1");
     const client = await getPool().connect();
     let message;
     try {
       await client.query("begin");
+      if (totalBytes) {
+        await client.query("select pg_advisory_xact_lock(hashtext('nova_chat_storage_quota'))");
+        const usage = await client.query(
+          `select coalesce(sum(size_bytes),0)::bigint as total_used,
+                  coalesce(sum(size_bytes) filter (where uploaded_by=$1),0)::bigint as user_used
+           from chat_attachments`,
+          [user.id]
+        );
+        if (Number(usage.rows[0]?.user_used || 0) + totalBytes > USER_QUOTA_BYTES) {
+          throw Object.assign(new Error("وصلت إلى حصة الملفات الخاصة بحسابك (100 ميغابايت)."), { statusCode: 413 });
+        }
+        if (Number(usage.rows[0]?.total_used || 0) + totalBytes > GLOBAL_CHAT_QUOTA_BYTES) {
+          throw Object.assign(new Error("وصلت مساحة ملفات المحادثات إلى الحد التجريبي (250 ميغابايت). تواصل مع الإدارة لزيادة السعة."), { statusCode: 413 });
+        }
+      }
       const inserted = await client.query(
         "insert into conversation_messages(conversation_id,sender_id,body) values($1,$2,$3) returning id,conversation_id,body,created_at,sender_id",
         [conversationId, user.id, body]
@@ -172,6 +172,7 @@ export async function POST(request) {
 
     return NextResponse.json({ ok: true, messageId: message.id }, { status: 201 });
   } catch (error) {
+    if (error.statusCode === 413) return NextResponse.json({ error: error.message }, { status: 413 });
     console.error("Chat message send failed:", error.message);
     return NextResponse.json({ error: "تعذر إرسال الرسالة حالياً." }, { status: 500 });
   }
