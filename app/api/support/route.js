@@ -83,8 +83,8 @@ export async function POST(request) {
         await client.query("insert into support_messages(ticket_id,sender_id,message) values($1,$2,$3)",[ticket.id,user.id,message]);
         await client.query(
           `insert into notifications(user_id,title,body)
-           select id,'تذكرة دعم جديدة',$2 from users where role='admin'`,
-          [ticket.id,`وصلت تذكرة دعم جديدة: ${subject}`]
+           select id,'تذكرة دعم جديدة',$1 from users where role='admin'`,
+          [`وصلت تذكرة دعم جديدة: ${subject}`]
         );
         await client.query("commit");
       } catch(error) { await client.query("rollback"); throw error; }
@@ -115,8 +115,8 @@ export async function POST(request) {
       if(!isAdmin) {
         await client.query(
           `insert into notifications(user_id,title,body)
-           select id,'رسالة دعم جديدة',$2 from users where role='admin'`,
-          [ticketId,`وصل رد جديد على تذكرة: ${ticketId.slice(0,8)}`]
+           select id,'رسالة دعم جديدة',$1 from users where role='admin'`,
+          [`وصل رد جديد على تذكرة: ${ticketId.slice(0,8)}`]
         );
       }
       await client.query("commit");
