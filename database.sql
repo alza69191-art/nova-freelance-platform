@@ -222,3 +222,13 @@ create table if not exists service_reviews (
 );
 create index if not exists idx_service_reviews_service on service_reviews(service_id, created_at desc);
 create index if not exists idx_service_reviews_seller on service_reviews(seller_id, created_at desc);
+
+
+-- Users' saved service listings.
+create table if not exists favorite_services (
+  user_id uuid not null references users(id) on delete cascade,
+  service_id uuid not null references services(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key(user_id,service_id)
+);
+create index if not exists idx_favorite_services_service on favorite_services(service_id);
