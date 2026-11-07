@@ -95,6 +95,7 @@ function providerFailure(error) {
   if (Number.isInteger(error?.status)) {
     return { status: error.status, code: error.code || `HTTP_${error.status}` };
   }
+  if (error?.code) return { status: null, code: String(error.code) };
   return {
     status: null,
     code: error?.name === "TimeoutError" || error?.name === "AbortError" ? "TIMEOUT" : "NETWORK",
@@ -111,6 +112,7 @@ function providerFailureText(failure) {
   if (failure.status >= 500) return "المزوّد يواجه عطلاً مؤقتاً";
   if (failure.code === "TIMEOUT") return "انتهت مهلة الاتصال";
   if (failure.code === "NETWORK") return "تعذّر الوصول إلى خادم المزوّد";
+  if (failure.code === "EMPTY_RESPONSE") return "لم يُرجع النموذج نصاً";
   return `فشل الاتصال (${failure.code})`;
 }
 
@@ -132,7 +134,11 @@ async function askOpenAICompatible(provider, messages) {
   });
   const data = await readProviderJson(response);
   const reply = contentText(data.choices?.[0]?.message?.content);
-  if (!reply) throw new Error("Provider returned no text");
+  if (!reply) {
+    const error = new Error("Provider returned no text");
+    error.code = "EMPTY_RESPONSE";
+    throw error;
+  }
   return reply;
 }
 
@@ -153,7 +159,11 @@ async function askGemini(provider, messages) {
   });
   const data = await readProviderJson(response);
   const reply = contentText(data.candidates?.[0]?.content?.parts || []);
-  if (!reply) throw new Error("Gemini returned no text");
+  if (!reply) {
+    const error = new Error("Gemini returned no text");
+    error.code = "EMPTY_RESPONSE";
+    throw error;
+  }
   return reply;
 }
 
