@@ -32,7 +32,7 @@ export async function GET(request, { params }) {
     const size = data.length;
     const inline = file.mime_type.startsWith("image/") || file.mime_type.startsWith("video/");
     const disposition = inline ? "inline" : "attachment";
-    const encodedName = encodeURIComponent(file.file_name).replace(/['()]/g, escape).replace(/\\*/g, "%2A");
+    const encodedName = encodeURIComponent(file.file_name).replace(/[!'()*]/g, (char) => "%" + char.charCodeAt(0).toString(16).toUpperCase());
     const headers = {
       "Content-Type": file.mime_type,
       "Content-Disposition": `${disposition}; filename*=UTF-8''${encodedName}`,
