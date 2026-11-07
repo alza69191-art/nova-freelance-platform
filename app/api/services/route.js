@@ -62,7 +62,9 @@ export async function GET(request) {
               coalesce(nullif(p.display_name,''),'مستقل NOVA') as seller_name,
               (select m.id from service_media m where m.service_id=s.id order by m.sort_order,m.created_at limit 1) as cover_id,
               (select count(*)::int from service_media m where m.service_id=s.id) as image_count,
-              coalesce((select json_agg(m.id order by m.sort_order,m.created_at) from service_media m where m.service_id=s.id),'[]'::json) as image_ids
+              coalesce((select json_agg(m.id order by m.sort_order,m.created_at) from service_media m where m.service_id=s.id),'[]'::json) as image_ids,
+              coalesce((select round(avg(r.rating)::numeric,2) from service_reviews r where r.service_id=s.id),0) as rating,
+              (select count(*)::int from service_reviews r where r.service_id=s.id) as review_count
        from services s left join profiles p on p.user_id=s.seller_id
        where ${mine ? "s.seller_id=$1" : "s.status='published'"}
        order by coalesce(s.published_at,s.created_at) desc limit 100`,
